@@ -25,21 +25,21 @@ A mobile-first food log that replaces searching a database with pointing a camer
 
 <div align="center">
 
-<!--
-  ADD THE DEMO VIDEO HERE.
-  Easiest route: open a new GitHub issue in this repo, drag the .mp4 or .gif into
-  the comment box, copy the URL GitHub generates, and paste it below as:
+<img src="docs/demo.gif" alt="Signing in, photographing a plate, and logging it as a meal" width="300" />
 
-      https://github.com/user-attachments/assets/<id>
+<sub>Real recording: sign in → photograph a plate → add a hint → analyse → review the estimate → logged, with the photo.</sub>
 
-  A bare URL on its own line renders as an inline player. Do NOT wrap it in
-  markdown image syntax — that only works for GIFs, not MP4.
-  Keep it under ~30s: open app → tap Add food → shoot a plate → review → logged.
--->
-
-**[▶ Try it live](https://kcalup.maansi.fyi)** · install it to your home screen and it behaves like a native app
+**[▶ Try it live](https://kcalup.maansi.fyi)** · [full-quality MP4](docs/demo.mp4) · installs to your home screen
 
 </div>
+
+<!--
+  To swap in a video player instead of the GIF: open a new issue in this repo,
+  drag docs/demo.mp4 into the comment box, copy the generated
+  https://github.com/user-attachments/assets/<id> URL, and paste it bare on its
+  own line above. GitHub renders that as an inline player; committed MP4s are
+  only linkable, not embeddable.
+-->
 
 ---
 
