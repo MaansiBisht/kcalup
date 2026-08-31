@@ -20,16 +20,7 @@ export const analysisSchema = z.object({
 export type FoodItem = z.infer<typeof foodItemSchema>
 export type Analysis = z.infer<typeof analysisSchema>
 
-/**
- * Structured output, not a tool call. The model is not choosing to invoke
- * anything — we always want the same shaped answer — and json_schema is enforced
- * where a function definition is only suggested. Gemini honoured the nested item
- * schema every time through response_format and inconsistently through tools.
- *
- * No minItems: a photo with no food has to be able to come back empty rather than
- * be forced to invent a row. Zod rejects the empty list and the route turns that
- * into "No food found in that photo."
- */
+/** Structured output, not a tool call: json_schema is enforced, a tool is only suggested. */
 export const ANALYZE_RESPONSE_FORMAT = {
   type: 'json_schema' as const,
   json_schema: {
@@ -60,6 +51,21 @@ export const ANALYZE_RESPONSE_FORMAT = {
   },
 }
 
+export const MAX_NOTE_LENGTH = 200
+
+/** The note is quoted as the user's description, never merged into the instruction. */
+export function analyzePrompt(note?: string | null): string {
+  const hint = note?.trim().slice(0, MAX_NOTE_LENGTH)
+  if (!hint) return ANALYZE_PROMPT
+
+  return [
+    ANALYZE_PROMPT,
+    `The person who took the photo describes it as: "${hint}"`,
+    'Treat that as a hint for identifying items you cannot recognise on sight.',
+    'Still estimate portions from the photo, not from the description.',
+  ].join(' ')
+}
+
 export const ANALYZE_PROMPT = [
   'Identify every distinct food and drink in this photo and estimate its nutrition.',
   'Estimate the portion actually visible, not a standard serving.',
@@ -68,10 +74,7 @@ export const ANALYZE_PROMPT = [
   'Reply with JSON only.',
 ].join(' ')
 
-/**
- * The response is the JSON. Scanning for the outermost braces rather than parsing
- * the whole string handles the models that wrap it in a ```json fence anyway.
- */
+/** Scans for the outermost braces, since models wrap the JSON in a fence unasked. */
 export function extractAnalysis(completion: ChatCompletion): unknown {
   const text = completion.choices?.[0]?.message?.content
   if (typeof text !== 'string') throw new Error('model returned no content')

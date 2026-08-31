@@ -3,8 +3,17 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabaseBrowser } from '@/lib/supabase-browser'
+import { MEAL_IMAGES_BUCKET } from '@/lib/storage'
 
-export function DeleteMealButton({ mealId, returnTo }: { mealId: string; returnTo: string }) {
+export function DeleteMealButton({
+  mealId,
+  imageKey,
+  returnTo,
+}: {
+  mealId: string
+  imageKey: string | null
+  returnTo: string
+}) {
   const router = useRouter()
   const [confirming, setConfirming] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -14,6 +23,11 @@ export function DeleteMealButton({ mealId, returnTo }: { mealId: string; returnT
     setBusy(true)
     setError(null)
     const supabase = supabaseBrowser()
+
+    // Photo first: once the row is gone nothing remembers the key and it orphans.
+    if (imageKey) {
+      await supabase.storage.from(MEAL_IMAGES_BUCKET).remove([imageKey])
+    }
 
     // RLS scopes this to the owner; food_items go with it via cascade.
     const { error: deleteError } = await supabase.from('meals').delete().eq('id', mealId)

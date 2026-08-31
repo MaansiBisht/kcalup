@@ -2,7 +2,13 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { chatCompletion } from '@/lib/ai'
 import { supabaseServer } from '@/lib/supabase-server'
-import { analysisSchema, extractAnalysis, ANALYZE_RESPONSE_FORMAT, ANALYZE_PROMPT } from '@/lib/analysis'
+import {
+  analysisSchema,
+  extractAnalysis,
+  analyzePrompt,
+  ANALYZE_RESPONSE_FORMAT,
+  MAX_NOTE_LENGTH,
+} from '@/lib/analysis'
 import { MEAL_IMAGES_BUCKET } from '@/lib/storage'
 
 // The vision call is the slow part of this app; give it room.
@@ -11,7 +17,10 @@ export const maxDuration = 60
 const HOURLY_LIMIT = 30
 const DAILY_LIMIT = 100
 
-const bodySchema = z.object({ imageKey: z.string().min(1).max(300) })
+const bodySchema = z.object({
+  imageKey: z.string().min(1).max(300),
+  note: z.string().max(MAX_NOTE_LENGTH).optional(),
+})
 
 export async function POST(request: Request) {
   const supabase = await supabaseServer()
@@ -23,7 +32,7 @@ export async function POST(request: Request) {
   if (!parsedBody.success) {
     return NextResponse.json({ error: 'Bad request.' }, { status: 400 })
   }
-  const { imageKey } = parsedBody.data
+  const { imageKey, note } = parsedBody.data
 
   // The key is server-authoritative: it must live under this user's folder.
   // Without this, a valid session could analyse someone else's upload.
@@ -34,10 +43,7 @@ export async function POST(request: Request) {
   const limited = await checkRateLimit(supabase, userId)
   if (limited) return NextResponse.json({ error: limited }, { status: 429 })
 
-  // The image has to travel through this function after all: Gemini's
-  // OpenAI-compatible endpoint takes data: URIs only and rejects a remote URL
-  // with a bare 400. Uploads are downscaled to 1280px client-side first, so this
-  // is a few hundred KB, not the original camera file.
+  // Gemini takes data: URIs only and 400s on a remote URL, so the image comes through here.
   const { data: file, error: downloadError } = await supabase.storage
     .from(MEAL_IMAGES_BUCKET)
     .download(imageKey)
@@ -60,7 +66,7 @@ export async function POST(request: Request) {
           role: 'user',
           content: [
             { type: 'image_url', image_url: { url: dataUri } },
-            { type: 'text', text: ANALYZE_PROMPT },
+            { type: 'text', text: analyzePrompt(note) },
           ],
         },
       ],

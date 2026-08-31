@@ -1,5 +1,11 @@
 import { describe, test, expect } from 'vitest'
-import { analysisSchema, extractAnalysis } from '@/lib/analysis'
+import {
+  analysisSchema,
+  extractAnalysis,
+  analyzePrompt,
+  ANALYZE_PROMPT,
+  MAX_NOTE_LENGTH,
+} from '@/lib/analysis'
 
 const ok = { items: [{ name: 'Toast', calories: 120 }] }
 
@@ -53,5 +59,26 @@ describe('extractAnalysis', () => {
 
   test('throws when the provider returns no choices at all', () => {
     expect(() => extractAnalysis({ choices: [] } as never)).toThrow()
+  })
+})
+
+describe('analyzePrompt', () => {
+  test('returns the bare instruction when there is no note', () => {
+    expect(analyzePrompt()).toBe(ANALYZE_PROMPT)
+    expect(analyzePrompt('')).toBe(ANALYZE_PROMPT)
+    expect(analyzePrompt('   ')).toBe(ANALYZE_PROMPT)
+    expect(analyzePrompt(null)).toBe(ANALYZE_PROMPT)
+  })
+
+  test("quotes the note as the user's description rather than as an instruction", () => {
+    const prompt = analyzePrompt('protein shake with oat milk')
+    expect(prompt).toContain('"protein shake with oat milk"')
+    expect(prompt).toContain('Still estimate portions from the photo')
+  })
+
+  test('truncates an overlong note instead of sending it whole', () => {
+    const prompt = analyzePrompt('x'.repeat(500))
+    expect(prompt).toContain('x'.repeat(MAX_NOTE_LENGTH))
+    expect(prompt).not.toContain('x'.repeat(MAX_NOTE_LENGTH + 1))
   })
 })

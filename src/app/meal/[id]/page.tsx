@@ -6,6 +6,10 @@ import { DeleteMealButton } from '@/components/DeleteMealButton'
 import { requireProfile, todayFor } from '@/lib/day'
 import { supabaseServer } from '@/lib/supabase-server'
 import { formatDayLabel } from '@/lib/date'
+import { MEAL_IMAGES_BUCKET } from '@/lib/storage'
+
+/** Long enough to view the page, short enough that a leaked link goes stale. */
+const SIGNED_URL_TTL_SECONDS = 3600
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -18,12 +22,17 @@ type MealDetail = {
   fat_g: number | null
   local_date: string
   logged_at: string
+  image_key: string | null
   food_items: {
     id: string
     name: string
     quantity: number | null
     unit: string | null
     calories: number
+    protein_g: number | null
+    carbs_g: number | null
+    fat_g: number | null
+    confidence: number | null
   }[]
 }
 
@@ -38,7 +47,7 @@ export default async function MealPage({ params }: { params: Promise<{ id: strin
   const { data } = await supabase
     .from('meals')
     .select(
-      'id, meal_type, calories, protein_g, carbs_g, fat_g, local_date, logged_at, food_items(id, name, quantity, unit, calories)',
+      'id, meal_type, calories, protein_g, carbs_g, fat_g, local_date, logged_at, image_key, food_items(id, name, quantity, unit, calories, protein_g, carbs_g, fat_g, confidence)',
     )
     .eq('id', id)
     .maybeSingle()
@@ -46,6 +55,15 @@ export default async function MealPage({ params }: { params: Promise<{ id: strin
   if (!data) notFound()
   const meal = data as MealDetail
   const today = todayFor(profile)
+
+  // Private bucket, so the photo needs a signed URL; a missing object just shows none.
+  const photoUrl = meal.image_key
+    ? (
+        await supabase.storage
+          .from(MEAL_IMAGES_BUCKET)
+          .createSignedUrl(meal.image_key, SIGNED_URL_TTL_SECONDS)
+      ).data?.signedUrl
+    : null
 
   const loggedTime = new Date(meal.logged_at).toLocaleTimeString('en-US', {
     hour: 'numeric',
@@ -71,6 +89,18 @@ export default async function MealPage({ params }: { params: Promise<{ id: strin
           <p className="mt-1 text-sm text-muted">Logged at {loggedTime}</p>
         </div>
 
+        {photoUrl && (
+          /* Signed URLs expire, so next/image's cache would hold a dead link. */
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={photoUrl}
+            alt={`Your ${meal.meal_type}`}
+            width={1280}
+            height={960}
+            className="aspect-[4/3] w-full rounded-card object-cover"
+          />
+        )}
+
         <section className="rounded-card bg-forest px-6 py-5 text-white">
           <p className="text-[0.6875rem] font-semibold tracking-[0.14em] text-white/60 uppercase">
             Meal total
@@ -93,12 +123,16 @@ export default async function MealPage({ params }: { params: Promise<{ id: strin
               <li key={item.id} className="flex items-baseline justify-between py-3">
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-medium text-ink">{item.name}</span>
-                  {item.quantity !== null && (
-                    <span className="block text-xs text-muted">
-                      {item.quantity}
-                      {item.unit ? ` ${item.unit}` : ''}
-                    </span>
-                  )}
+                  <span className="mt-0.5 block text-xs text-muted">
+                    {[
+                      item.quantity !== null && `${item.quantity}${item.unit ? ` ${item.unit}` : ''}`,
+                      item.protein_g !== null && `P ${Math.round(item.protein_g)}g`,
+                      item.carbs_g !== null && `C ${Math.round(item.carbs_g)}g`,
+                      item.fat_g !== null && `F ${Math.round(item.fat_g)}g`,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ') || 'No portion recorded'}
+                  </span>
                 </span>
                 <span className="text-sm text-ink tabular-nums">{item.calories}</span>
               </li>
@@ -106,7 +140,11 @@ export default async function MealPage({ params }: { params: Promise<{ id: strin
           </ul>
         </section>
 
-        <DeleteMealButton mealId={meal.id} returnTo={`/day/${meal.local_date}`} />
+        <DeleteMealButton
+          mealId={meal.id}
+          imageKey={meal.image_key}
+          returnTo={`/day/${meal.local_date}`}
+        />
       </main>
 
       <TabBar />
