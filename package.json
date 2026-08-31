@@ -30,5 +30,12 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.11"
+  },
+  "license": "MIT",
+  "description": "Photograph your plate. Get calories in under 15 seconds.",
+  "homepage": "https://kcalup.maansi.fyi",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MaansiBisht/kcalup.git"
   }
 }

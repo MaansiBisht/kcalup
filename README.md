@@ -16,6 +16,7 @@ A mobile-first food log that replaces searching a database with pointing a camer
 ![Tailwind](https://img.shields.io/badge/Tailwind-v4-06B6D4?logo=tailwindcss&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-deployed-000000?logo=vercel&logoColor=white)
 ![Tests](https://img.shields.io/badge/tests-37%20passing-success)
+![License](https://img.shields.io/badge/license-MIT-blue)
 
 </div>
 
@@ -302,6 +303,12 @@ Installability comes from the manifest alone; there is no service worker, becaus
 - [ ] Weekly trends and averages
 - [ ] Re-analyse with a hint when the first pass gets it wrong
 - [ ] Export to CSV
+
+---
+
+## License
+
+[MIT](LICENSE) © Maansi Bisht
 
 ---
 
