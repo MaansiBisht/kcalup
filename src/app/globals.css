@@ -1,26 +1,31 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Design tokens. Tailwind v4 reads @theme and generates utilities from it,
+   so components stay pure utility classes — bg-forest, text-ink, rounded-card. */
+@theme {
+  --color-cream:    #f7f5f0;
+  --color-paper:    #ffffff;
+  --color-ink:      #14150f;
+  --color-graphite: #1f211a;
+  --color-forest:   #24462f;
+  --color-moss:     #3d6b4a;
+  --color-muted:    #8b8b80;
+  --color-hairline: #e9e6dd;
+
+  --radius-card: 1.25rem;
+  --radius-tile: 1rem;
+
+  --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Only global rules that utilities genuinely cannot express. */
+html {
+  background: var(--color-cream);
+  -webkit-text-size-adjust: 100%;
 }
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  /* iOS Safari: dvh accounts for the collapsing address bar; svh is the fallback. */
+  min-height: 100svh;
+  min-height: 100dvh;
 }

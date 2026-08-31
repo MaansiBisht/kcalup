@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# agent instructions and working notes — local, not shared
+PLAN.md
+persona.md
+CLAUDE.md
+AGENTS.md
+
+# supabase CLI scratch
+supabase/.temp

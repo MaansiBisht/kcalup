@@ -1,0 +1,3 @@
+[
+  { "image": "hamburger.jpg", "kcal": 550, "expect": ["burger"], "source": "PLACEHOLDER label - replace with a photo whose calories you actually know" }
+]
