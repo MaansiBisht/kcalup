@@ -58,58 +58,6 @@ A mobile-first food log that replaces searching a database with pointing a camer
 
 ---
 
-## How a photo becomes a meal
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant P as 📱 Phone
-    participant S as 🗄️ Supabase Storage
-    participant A as ⚡ /api/analyze
-    participant M as 🧠 Vision model
-    participant D as 🐘 Postgres
-
-    P->>P: Downscale to 1280px JPEG
-    P->>P: Confirm + optional description
-    P->>S: Upload to {user_id}/{uuid}.jpg
-    P->>A: POST { imageKey, note }
-    A->>A: Verify key belongs to caller
-    A->>A: Rate limit (30/hr, 100/day)
-    A->>S: Download object
-    A->>M: Image + JSON schema
-    M-->>A: Structured JSON
-    A->>A: Zod validation
-    A-->>P: Items, or a real error
-    P->>P: User edits the estimate
-    P->>D: log_meal() — atomic, server-side date
-```
-
-**Nothing is uploaded until you press Analyse.** A bad shot costs no storage and no AI call.
-
-<details>
-<summary><b>Why the image passes through the API route</b></summary>
-
-<br>
-
-The original design handed the model a signed URL so the image never touched our compute. That broke: Gemini's OpenAI-compatible endpoint accepts `data:` URIs only and rejects a remote URL with a bare `400`.
-
-So the route downloads the object and inlines it as base64. Because the browser has already downscaled to a 1280px long edge, that's a few hundred KB — not the original camera file. The 8 MB upload limit is still avoided entirely, since the phone uploads to storage directly.
-
-</details>
-
-<details>
-<summary><b>Why structured output instead of tool calling</b></summary>
-
-<br>
-
-With a tool/function definition, `gemini-3.5-flash-lite` ignored the nested item schema and returned `{"items": ["Hamburger"]}` — an array of strings. Zod rejected it and the user saw a failure. It wasn't even deterministic: an identical retry returned proper objects.
-
-`response_format: { type: "json_schema" }` is *enforced* where a function definition is only *suggested*. Switching removed the tool definition, the tool-call extraction, and the whole class of bug.
-
-</details>
-
----
-
 ## Architecture
 
 ```mermaid
@@ -148,6 +96,30 @@ graph TB
 ```
 
 The provider is one `fetch` in a single file. No vendor SDK, because one POST and one JSON parse do not need a dependency — and the SDK that was going to be the abstraction turned out to speak the wrong endpoint.
+
+**Nothing is uploaded until you press Analyse.** A bad shot costs no storage and no AI call.
+
+<details>
+<summary><b>Why the image passes through the API route</b></summary>
+
+<br>
+
+The original design handed the model a signed URL so the image never touched our compute. That broke: Gemini's OpenAI-compatible endpoint accepts `data:` URIs only and rejects a remote URL with a bare `400`.
+
+So the route downloads the object and inlines it as base64. Because the browser has already downscaled to a 1280px long edge, that's a few hundred KB — not the original camera file. The 8 MB upload limit is still avoided entirely, since the phone uploads to storage directly.
+
+</details>
+
+<details>
+<summary><b>Why structured output instead of tool calling</b></summary>
+
+<br>
+
+With a tool/function definition, `gemini-3.5-flash-lite` ignored the nested item schema and returned `{"items": ["Hamburger"]}` — an array of strings. Zod rejected it and the user saw a failure. It wasn't even deterministic: an identical retry returned proper objects.
+
+`response_format: { type: "json_schema" }` is *enforced* where a function definition is only *suggested*. Switching removed the tool definition, the tool-call extraction, and the whole class of bug.
+
+</details>
 
 ---
 
