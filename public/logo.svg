@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="Kcalup">
+  <rect width="120" height="120" rx="26" fill="#24462f"/>
+  <g stroke="#f7f5f0" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M44 32 L44 88"/>
+    <path d="M76 46 L44 64 L76 86"/>
+  </g>
+  <circle cx="76" cy="46" r="9" fill="#f7f5f0"/>
+</svg>
