@@ -9,6 +9,7 @@ import { analysisSchema, MAX_NOTE_LENGTH, type FoodItem } from '@/lib/analysis'
 import { mealTypeFromHour, type MealType } from '@/lib/nutrition'
 import { hourIn } from '@/lib/date'
 import { ReviewSheet } from './ReviewSheet'
+import { CAMERA_INPUT_ID } from './camera-input-id'
 
 type Stage = 'idle' | 'describe' | 'uploading' | 'analyzing' | 'review'
 
@@ -28,10 +29,12 @@ export function PhotoCapture({ timezone }: { timezone: string }) {
   const [picked, setPicked] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
 
-  // Focus, not click: iOS blocks a programmatic file-input click outside a user gesture.
+  // Open the camera straight away; scroll and focus so it is one tap if iOS
+  // refuses the programmatic click outside a user gesture.
   useEffect(() => {
     if (params.get('action') !== 'photo') return
 
+    cameraRef.current?.click()
     captureRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
     captureRef.current?.focus({ preventScroll: true })
     router.replace('/')
@@ -132,6 +135,7 @@ export function PhotoCapture({ timezone }: { timezone: string }) {
           picker on desktop. Same element, both cases, no permission dance. */}
       <input
         ref={cameraRef}
+        id={CAMERA_INPUT_ID}
         type="file"
         accept={ACCEPTED_TYPES.join(',')}
         capture="environment"

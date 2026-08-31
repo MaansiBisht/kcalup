@@ -5,6 +5,7 @@ export type MealRow = {
   id: string
   meal_type: MealType
   calories: number
+  photoUrl?: string | null
   food_items: { name: string }[]
 }
 
@@ -32,12 +33,25 @@ export function MealList({ meals, emptyHint }: { meals: MealRow[]; emptyHint: st
             href={`/meal/${meal.id}`}
             className="-mx-2 flex items-center gap-3.5 rounded-tile px-2 py-3 transition-colors hover:bg-cream focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
           >
-            <span
-              aria-hidden
-              className="flex size-10 shrink-0 items-center justify-center rounded-full bg-cream text-lg"
-            >
-              {MEAL_GLYPH[meal.meal_type]}
-            </span>
+            {meal.photoUrl ? (
+              /* Signed URLs expire, so next/image's cache would hold a dead link. */
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={meal.photoUrl}
+                alt=""
+                width={40}
+                height={40}
+                loading="lazy"
+                className="size-10 shrink-0 rounded-full bg-cream object-cover"
+              />
+            ) : (
+              <span
+                aria-hidden
+                className="flex size-10 shrink-0 items-center justify-center rounded-full bg-cream text-lg"
+              >
+                {MEAL_GLYPH[meal.meal_type]}
+              </span>
+            )}
 
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-semibold text-ink capitalize">{meal.meal_type}</span>

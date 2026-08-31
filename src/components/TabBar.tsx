@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { CAMERA_INPUT_ID } from './camera-input-id'
 
 const TABS = [
   { href: '/', label: 'Today', icon: HomeIcon },
@@ -23,18 +24,25 @@ export function TabBar() {
           const isPhoto = href.includes('action=photo')
           const active = !isPhoto && pathname === base
 
+          const className = `flex flex-col items-center gap-1 py-2.5 text-[0.6875rem] font-medium transition-colors ${
+            active ? 'text-forest' : 'text-muted hover:text-ink'
+          }`
+
+          // On the home page the capture input is already mounted, so a plain
+          // label opens the camera with no JS and no lost user gesture.
           return (
             <li key={label} className="flex-1">
-              <Link
-                href={href}
-                aria-current={active ? 'page' : undefined}
-                className={`flex flex-col items-center gap-1 py-2.5 text-[0.6875rem] font-medium transition-colors ${
-                  active ? 'text-forest' : 'text-muted hover:text-ink'
-                }`}
-              >
-                <Icon />
-                {label}
-              </Link>
+              {isPhoto && pathname === '/' ? (
+                <label htmlFor={CAMERA_INPUT_ID} className={`${className} cursor-pointer`}>
+                  <Icon />
+                  {label}
+                </label>
+              ) : (
+                <Link href={href} aria-current={active ? 'page' : undefined} className={className}>
+                  <Icon />
+                  {label}
+                </Link>
+              )}
             </li>
           )
         })}
