@@ -17,6 +17,7 @@ export function AccountForm({ profile }: { profile: Profile }) {
   const [protein, setProtein] = useState(profile.protein_goal_g?.toString() ?? '')
   const [carbs, setCarbs] = useState(profile.carbs_goal_g?.toString() ?? '')
   const [fat, setFat] = useState(profile.fat_goal_g?.toString() ?? '')
+  const [targetWeight, setTargetWeight] = useState(profile.target_weight_kg?.toString() ?? '')
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -26,6 +27,13 @@ export function AccountForm({ profile }: { profile: Profile }) {
     const calories = Number(goal)
     if (!Number.isFinite(calories) || calories < 500 || calories > 20000) {
       return setError('Enter a daily goal between 500 and 20,000 kcal.')
+    }
+
+    // Matches the weights CHECK range, so a target cannot be set somewhere no
+    // reading could ever reach.
+    const target = targetWeight.trim() === '' ? null : Number(targetWeight)
+    if (target !== null && (!Number.isFinite(target) || target <= 20 || target >= 500)) {
+      return setError('Enter a target weight between 20 and 500 kg, or leave it blank.')
     }
 
     setBusy(true)
@@ -39,6 +47,7 @@ export function AccountForm({ profile }: { profile: Profile }) {
         name: name.trim() || null,
         daily_calorie_goal: Math.round(calories),
         goal_type: goalType,
+        target_weight_kg: target,
         // Refresh the timezone on save — people move, and every future
         // local_date depends on this being current.
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || profile.timezone,
@@ -98,6 +107,31 @@ export function AccountForm({ profile }: { profile: Profile }) {
             ))}
           </div>
         </fieldset>
+
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-medium text-muted">
+            Target weight (optional)
+          </span>
+          <span className="flex items-baseline rounded-tile border border-hairline bg-paper px-4 py-3 focus-within:border-forest">
+            <input
+              value={targetWeight}
+              onChange={(e) => setTargetWeight(e.target.value)}
+              type="number"
+              inputMode="decimal"
+              step="0.1"
+              min={20}
+              max={500}
+              placeholder="Not set"
+              className="min-w-0 flex-1 bg-transparent text-[0.9375rem] text-ink tabular-nums placeholder:text-muted focus:outline-none"
+            />
+            <span aria-hidden className="ml-2 text-xs font-medium text-muted">
+              kg
+            </span>
+          </span>
+          <span className="mt-1 block text-[0.6875rem] text-muted">
+            Sets the target line on your weight trend in History.
+          </span>
+        </label>
 
         <fieldset>
           <legend className="mb-2 text-xs font-medium text-muted">Macro goals (optional)</legend>

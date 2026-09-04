@@ -175,6 +175,33 @@ describe.skipIf(!configured)('row level security', () => {
     await userA.from('meals').delete().eq('id', mealId)
   })
 
+  test('log_weight is per-user and one reading per day', async () => {
+    const userA = await signIn(env.aEmail!, env.aPassword!)
+    const userB = await signIn(env.bEmail!, env.bPassword!)
+
+    // Act: A weighs in, then re-weighs the same day.
+    expect((await userA.rpc('log_weight', { p_weight_kg: 81.4 })).error).toBeNull()
+    expect((await userA.rpc('log_weight', { p_weight_kg: 80.9 })).error).toBeNull()
+
+    // Assert: the second reading replaced the first rather than stacking.
+    const { data: rows } = await userA.from('weights').select('local_date, weight_kg')
+    expect(rows).toHaveLength(1)
+    expect(Number(rows![0].weight_kg)).toBe(80.9)
+
+    // B cannot see or delete it.
+    const { data: seenByB } = await userB.from('weights').select('id')
+    expect(seenByB).toEqual([])
+    await userB.from('weights').delete().neq('weight_kg', 0)
+    expect(await userA.from('weights').select('id', { count: 'exact', head: true })).toMatchObject({
+      count: 1,
+    })
+
+    // And the CHECK constraint refuses a physically impossible reading.
+    expect((await userA.rpc('log_weight', { p_weight_kg: 900 })).error).not.toBeNull()
+
+    await userA.from('weights').delete().neq('weight_kg', 0)
+  })
+
   test('a client cannot forge a user_id on insert', async () => {
     const userA = await signIn(env.aEmail!, env.aPassword!)
     const userB = await signIn(env.bEmail!, env.bPassword!)

@@ -1,7 +1,10 @@
 import Link from 'next/link'
 import { AppHeader } from '@/components/AppHeader'
 import { TabBar } from '@/components/TabBar'
+import { WeightForm } from '@/components/WeightForm'
+import { WeightTrend } from '@/components/WeightTrend'
 import { requireProfile, todayFor, loadDayTotals } from '@/lib/day'
+import { loadWeights } from '@/lib/weight'
 import { shiftDate, formatDayLabel } from '@/lib/date'
 
 const DAYS_SHOWN = 30
@@ -11,8 +14,12 @@ export default async function HistoryPage() {
   const today = todayFor(profile)
   const from = shiftDate(today, -(DAYS_SHOWN - 1))
 
-  // One grouped query for the whole window, not one per day.
-  const totals = await loadDayTotals(from, today)
+  // Independent reads, so they go together rather than one after the other.
+  const [totals, weights] = await Promise.all([
+    loadDayTotals(from, today),
+    loadWeights(from, today),
+  ])
+  const todaysWeight = weights.find((w) => w.local_date === today)?.weight_kg ?? null
 
   const days = Array.from({ length: DAYS_SHOWN }, (_, i) => shiftDate(today, -i))
   const loggedCount = days.filter((d) => (totals.get(d) ?? 0) > 0).length
@@ -30,6 +37,59 @@ export default async function HistoryPage() {
               : 'The last 30 days'}
           </p>
         </div>
+
+        <section aria-labelledby="weight-heading" className="space-y-3">
+          <div className="flex items-baseline justify-between">
+            <h2 id="weight-heading" className="text-sm font-semibold text-ink">
+              Weight
+            </h2>
+            <span className="text-xs text-muted">
+              {profile.target_weight_kg !== null
+                ? `Target ${profile.target_weight_kg} kg`
+                : 'No target set'}
+            </span>
+          </div>
+
+          <WeightForm todaysWeight={todaysWeight} />
+          <WeightTrend points={weights} target={profile.target_weight_kg} />
+
+          {/* The table view. Every reading the chart smooths is readable here. */}
+          {weights.length > 0 && (
+            <details className="rounded-tile border border-hairline px-3.5 py-2.5">
+              <summary className="cursor-pointer text-xs font-medium text-muted">
+                All {weights.length} weigh-in{weights.length === 1 ? '' : 's'}
+              </summary>
+              <table className="mt-2 w-full text-xs">
+                <caption className="sr-only">Recorded weights, newest first</caption>
+                <thead>
+                  <tr className="text-muted">
+                    <th scope="col" className="py-1 text-left font-medium">
+                      Day
+                    </th>
+                    <th scope="col" className="py-1 text-right font-medium">
+                      Weight
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-hairline">
+                  {[...weights].reverse().map((w) => (
+                    <tr key={w.local_date}>
+                      <td className="py-1.5 text-ink">{formatDayLabel(w.local_date, today)}</td>
+                      <td className="py-1.5 text-right text-ink tabular-nums">
+                        {w.weight_kg.toFixed(1)} kg
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </details>
+          )}
+        </section>
+
+        <section aria-labelledby="intake-heading" className="space-y-3">
+          <h2 id="intake-heading" className="text-sm font-semibold text-ink">
+            Daily intake
+          </h2>
 
         {loggedCount === 0 ? (
           <p className="rounded-tile border border-dashed border-hairline px-4 py-10 text-center text-sm text-muted">
@@ -74,6 +134,7 @@ export default async function HistoryPage() {
             })}
           </ul>
         )}
+        </section>
       </main>
 
       <TabBar />
