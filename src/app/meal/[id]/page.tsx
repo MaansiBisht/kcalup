@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { AppHeader } from '@/components/AppHeader'
 import { TabBar } from '@/components/TabBar'
 import { DeleteMealButton } from '@/components/DeleteMealButton'
+import { FavouriteButton } from '@/components/FavouriteButton'
 import { requireProfile, todayFor } from '@/lib/day'
 import { supabaseServer } from '@/lib/supabase-server'
 import { formatDayLabel } from '@/lib/date'
@@ -23,6 +24,7 @@ type MealDetail = {
   local_date: string
   logged_at: string
   image_key: string | null
+  is_favourite: boolean
   food_items: {
     id: string
     name: string
@@ -47,7 +49,7 @@ export default async function MealPage({ params }: { params: Promise<{ id: strin
   const { data } = await supabase
     .from('meals')
     .select(
-      'id, meal_type, calories, protein_g, carbs_g, fat_g, local_date, logged_at, image_key, food_items(id, name, quantity, unit, calories, protein_g, carbs_g, fat_g, confidence)',
+      'id, meal_type, calories, protein_g, carbs_g, fat_g, local_date, logged_at, image_key, is_favourite, food_items(id, name, quantity, unit, calories, protein_g, carbs_g, fat_g, confidence)',
     )
     .eq('id', id)
     .maybeSingle()
@@ -140,11 +142,14 @@ export default async function MealPage({ params }: { params: Promise<{ id: strin
           </ul>
         </section>
 
-        <DeleteMealButton
-          mealId={meal.id}
-          imageKey={meal.image_key}
-          returnTo={`/day/${meal.local_date}`}
-        />
+        <div className="space-y-2.5">
+          <FavouriteButton mealId={meal.id} initial={meal.is_favourite} />
+          <DeleteMealButton
+            mealId={meal.id}
+            imageKey={meal.image_key}
+            returnTo={`/day/${meal.local_date}`}
+          />
+        </div>
       </main>
 
       <TabBar />

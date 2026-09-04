@@ -4,16 +4,18 @@ import { AppHeader } from '@/components/AppHeader'
 import { CalorieCard } from '@/components/CalorieCard'
 import { PhotoCapture } from '@/components/PhotoCapture'
 import { MealList } from '@/components/MealList'
+import { RepeatMeals } from '@/components/RepeatMeals'
 import { MacroTiles } from '@/components/MacroTiles'
 import { TabBar } from '@/components/TabBar'
-import { requireProfile, todayFor, loadDay } from '@/lib/day'
+import { requireProfile, todayFor, loadDay, loadSuggestions } from '@/lib/day'
 import { greeting, formatFullDate } from '@/lib/date'
 import { sumItems } from '@/lib/nutrition'
 
 export default async function TodayPage() {
   const profile = await requireProfile()
   const today = todayFor(profile)
-  const meals = await loadDay(today)
+  // Independent reads, so they go together rather than one after the other.
+  const [meals, suggestions] = await Promise.all([loadDay(today), loadSuggestions()])
   const totals = sumItems(meals)
 
   return (
@@ -32,6 +34,8 @@ export default async function TodayPage() {
         <Suspense fallback={<div className="h-[7.5rem]" />}>
           <PhotoCapture timezone={profile.timezone} />
         </Suspense>
+
+        <RepeatMeals suggestions={suggestions} timezone={profile.timezone} />
 
         <section className="space-y-3">
           <div className="flex items-baseline justify-between">

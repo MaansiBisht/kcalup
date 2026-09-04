@@ -66,6 +66,55 @@ describe.skipIf(!configured)('row level security', () => {
     expect(cleanupError).toBeNull()
   })
 
+  test('repeat_meal copies your own meal and refuses someone else\'s', async () => {
+    const userA = await signIn(env.aEmail!, env.aPassword!)
+    const userB = await signIn(env.bEmail!, env.bPassword!)
+
+    // Arrange: A logs a two-item meal.
+    const { data: originalId } = await userA.rpc('log_meal', {
+      p_meal_type: 'lunch',
+      p_image_key: null,
+      p_items: [
+        { name: 'Repeat probe rice', calories: 200, protein_g: 4 },
+        { name: 'Repeat probe dal', calories: 150, protein_g: 9 },
+      ],
+    })
+    expect(originalId).toBeTruthy()
+
+    // Act: B cannot repeat it. RLS hides the source row, so the function raises.
+    const { error: bError } = await userB.rpc('repeat_meal', {
+      p_meal_id: originalId,
+      p_meal_type: 'lunch',
+    })
+    expect(bError).not.toBeNull()
+
+    // Act: A repeats their own, and gets a distinct meal with the same items.
+    const { data: copyId, error: aError } = await userA.rpc('repeat_meal', {
+      p_meal_id: originalId,
+      p_meal_type: 'dinner',
+    })
+    expect(aError).toBeNull()
+    expect(copyId).not.toEqual(originalId)
+
+    const { data: copy } = await userA
+      .from('meals')
+      .select('calories, meal_type, food_items(name, calories)')
+      .eq('id', copyId)
+      .single()
+
+    expect(copy).toMatchObject({ calories: 350, meal_type: 'dinner' })
+    expect(copy!.food_items).toHaveLength(2)
+
+    // And the picker now shows one suggestion for the pair, counted twice.
+    const { data: suggestions } = await userA.rpc('meal_suggestions', { p_limit: 12 })
+    const row = (suggestions as { meal_id: string; times_logged: number }[]).find(
+      (r) => r.meal_id === copyId,
+    )
+    expect(row?.times_logged).toBe(2)
+
+    await userA.from('meals').delete().in('id', [originalId, copyId])
+  })
+
   test('a client cannot forge a user_id on insert', async () => {
     const userA = await signIn(env.aEmail!, env.aPassword!)
     const userB = await signIn(env.bEmail!, env.bPassword!)

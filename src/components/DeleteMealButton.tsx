@@ -25,8 +25,17 @@ export function DeleteMealButton({
     const supabase = supabaseBrowser()
 
     // Photo first: once the row is gone nothing remembers the key and it orphans.
+    // Repeats share the original's photo, so only the last meal using the key
+    // may delete the object -- this row still exists, hence "more than one".
     if (imageKey) {
-      await supabase.storage.from(MEAL_IMAGES_BUCKET).remove([imageKey])
+      const { count } = await supabase
+        .from('meals')
+        .select('id', { count: 'exact', head: true })
+        .eq('image_key', imageKey)
+
+      if ((count ?? 0) <= 1) {
+        await supabase.storage.from(MEAL_IMAGES_BUCKET).remove([imageKey])
+      }
     }
 
     // RLS scopes this to the owner; food_items go with it via cascade.
