@@ -48,3 +48,6 @@ AGENTS.md
 
 # supabase CLI scratch
 supabase/.temp
+
+# Benchmark plates, fetched by `npm run fixtures` from the public Nutrition5k bucket.
+tests/fixtures/images/

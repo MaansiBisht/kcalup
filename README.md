@@ -207,18 +207,39 @@ npm run eval       # scores calorie accuracy against labelled photos
 ```
 
 <details>
-<summary><b>The accuracy harness — why prompt changes are measurable here</b></summary>
+<summary><b>The accuracy benchmark — what the estimates are actually worth</b></summary>
 
 <br>
 
-Prompt engineering without measurement is guesswork. `tests/accuracy.eval.test.ts` runs the *real* prompt and schema against labelled photos and scores median and worst-case error on total kcal. A schema failure counts as an accuracy failure, because the user sees nothing either way.
+Prompt engineering without measurement is guesswork, and a benchmark built on labels you guessed is worse than none — it looks rigorous while measuring nothing.
+
+The fixture set is **40 real plates from [Nutrition5k](https://github.com/google-research-datasets/Nutrition5k)** (Google Research, CC BY 4.0), whose calories were established by **weighing every ingredient**. The labels are measurements, not opinions. Dishes are filtered to composed meals (150–900 kcal, 2–8 ingredients, 100 g+) and sampled at an even stride across the calorie range, so the set spans the whole span rather than clustering.
 
 ```bash
-# tests/fixtures/cases.json
-[{ "image": "burger.jpg", "kcal": 750, "expect": ["burger", "fries"] }]
+npm run fixtures      # download the 40 plates (cached, gitignored)
+npm run eval          # regression gate for the current model
+npm run eval:models   # compare candidates head to head
 ```
 
-Drop photos whose calories you actually know into `tests/fixtures/`, label them, and run `npm run eval`. It skips itself when `AI_API_KEY` is unset, so CI stays free.
+Only the manifest is committed — dish ids plus their weighed ground truth. The photographs are fetched on demand, so the set is reproducible without carrying 40 images in git.
+
+**Measured baseline** (`tests/fixtures/benchmark.json`):
+
+| | gemini-3.1-flash-lite |
+|---|---|
+| Plates completed | 40 of 40 |
+| Schema failures | 0 |
+| Median error | **25%** |
+| p90 error | 70% |
+| Worst case | 95% |
+| Bias | −17% (systematically **under**-estimates) |
+| Within 50% of truth | 78% |
+
+Two things this number is not. It is **not** the error a user sees: Nutrition5k is overhead cafeteria trays shot on a fixed rig, a different and probably harder distribution than a phone photo of a restaurant plate. And it is **not** good enough to build a calorie deficit on unaided — a 25% median error on a 2,000 kcal day is 500 kcal, which is why every estimate lands in an editable sheet and the UI never claims otherwise.
+
+The negative bias is the more actionable finding: the model does not miss randomly, it reads low, so errors compound in one direction across a day.
+
+The gate asserts median and p90 rather than worst-case — on 40 plates the worst case is a single sample and it flaps. Thresholds carry headroom above the measured baseline so variance does not fail the build, and they move **down** as the prompt improves, never up to make a run pass. It skips itself when `AI_API_KEY` is unset, so CI stays free.
 
 </details>
 
