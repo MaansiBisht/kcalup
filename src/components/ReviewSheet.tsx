@@ -17,6 +17,32 @@ export const BLANK_ITEM: FoodItem = {
   confidence: null,
 }
 
+/**
+ * The same sheet serves three jobs and only the wording separates them. Saying
+ * "AI estimates from your photo" over numbers the user typed would be a lie,
+ * and "Add to today" is wrong when the meal is already saved to another day.
+ */
+const COPY = {
+  review: {
+    title: 'Review this meal',
+    hint: 'These are AI estimates from your photo — tap any number to correct it before saving.',
+    save: 'Add to today',
+    saving: 'Saving…',
+  },
+  manual: {
+    title: 'Add a meal by hand',
+    hint: 'Name each food and enter what you know. Calories are enough — macros are optional.',
+    save: 'Add to today',
+    saving: 'Saving…',
+  },
+  edit: {
+    title: 'Edit this meal',
+    hint: 'Correct anything that is wrong. The meal keeps its place in the day it was logged.',
+    save: 'Save changes',
+    saving: 'Saving…',
+  },
+} as const
+
 export function ReviewSheet({
   initialItems,
   imageKey,
@@ -25,6 +51,7 @@ export function ReviewSheet({
   onCancel,
   onSaved,
   manual = false,
+  mealId = null,
 }: {
   initialItems: FoodItem[]
   imageKey: string | null
@@ -34,10 +61,15 @@ export function ReviewSheet({
   onSaved: () => void
   /** Typed from memory rather than read off a photo. Only the wording differs. */
   manual?: boolean
+  /** Set when correcting a meal that is already saved. Updates instead of inserting. */
+  mealId?: string | null
 }) {
   const [items, setItems] = useState<FoodItem[]>(initialItems)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const mode = mealId ? 'edit' : manual ? 'manual' : 'review'
+  const copy = COPY[mode]
 
   const totals = sumItems(items)
   const canSave = items.length > 0 && items.every((i) => i.name.trim().length > 0)
@@ -56,14 +88,23 @@ export function ReviewSheet({
     setError(null)
     const supabase = supabaseBrowser()
 
-    const { error: rpcError } = await supabase.rpc('log_meal', {
-      p_meal_type: mealType,
-      p_image_key: imageKey,
-      p_items: items.map((i) => ({ ...i, name: i.name.trim() })),
-    })
+    const payload = items.map((i) => ({ ...i, name: i.name.trim() }))
+
+    // Totals are re-derived server-side either way; the client never sends them.
+    const { error: rpcError } = mealId
+      ? await supabase.rpc('update_meal', {
+          p_meal_id: mealId,
+          p_meal_type: mealType,
+          p_items: payload,
+        })
+      : await supabase.rpc('log_meal', {
+          p_meal_type: mealType,
+          p_image_key: imageKey,
+          p_items: payload,
+        })
 
     if (rpcError) {
-      setError('Could not save that meal. Try again.')
+      setError(mealId ? 'Could not save those changes. Try again.' : 'Could not save that meal. Try again.')
       setSaving(false)
       return
     }
@@ -73,14 +114,12 @@ export function ReviewSheet({
   return (
     <section
       role="dialog"
-      aria-label={manual ? 'Add a meal by hand' : 'Review this meal'}
+      aria-label={copy.title}
       className="fixed inset-0 z-20 flex items-end justify-center bg-ink/40 backdrop-blur-[2px]"
     >
       <div className="flex max-h-[92dvh] w-full max-w-md flex-col rounded-t-[1.75rem] bg-paper">
         <header className="flex items-center justify-between border-b border-hairline px-5 py-4">
-          <h2 className="text-base font-bold tracking-tight text-ink">
-            {manual ? 'Add a meal by hand' : 'Review this meal'}
-          </h2>
+          <h2 className="text-base font-bold tracking-tight text-ink">{copy.title}</h2>
           <button
             type="button"
             onClick={onCancel}
@@ -94,9 +133,7 @@ export function ReviewSheet({
           {/* Say plainly where the numbers came from. On the manual path they
               are the user's own, so the estimate disclaimer would be a lie. */}
           <p className="mb-4 rounded-tile bg-cream px-3.5 py-2.5 text-xs leading-relaxed text-muted">
-            {manual
-              ? 'Name each food and enter what you know. Calories are enough — macros are optional.'
-              : 'These are AI estimates from your photo — tap any number to correct it before saving.'}
+            {copy.hint}
           </p>
 
           <fieldset className="mb-5">
@@ -214,7 +251,7 @@ export function ReviewSheet({
             disabled={saving || !canSave}
             className="w-full rounded-card bg-graphite py-3.5 text-[0.9375rem] font-semibold text-white transition-transform active:scale-[0.985] disabled:opacity-50"
           >
-            {saving ? 'Saving…' : 'Add to today'}
+            {saving ? copy.saving : copy.save}
           </button>
         </footer>
       </div>

@@ -4,10 +4,12 @@ import { AppHeader } from '@/components/AppHeader'
 import { TabBar } from '@/components/TabBar'
 import { DeleteMealButton } from '@/components/DeleteMealButton'
 import { FavouriteButton } from '@/components/FavouriteButton'
+import { EditMealButton } from '@/components/EditMealButton'
 import { requireProfile, todayFor } from '@/lib/day'
 import { supabaseServer } from '@/lib/supabase-server'
 import { formatDayLabel } from '@/lib/date'
 import { MEAL_IMAGES_BUCKET } from '@/lib/storage'
+import type { MealType } from '@/lib/nutrition'
 
 /** Long enough to view the page, short enough that a leaked link goes stale. */
 const SIGNED_URL_TTL_SECONDS = 3600
@@ -143,6 +145,12 @@ export default async function MealPage({ params }: { params: Promise<{ id: strin
         </section>
 
         <div className="space-y-2.5">
+          <EditMealButton
+            mealId={meal.id}
+            imageKey={meal.image_key}
+            mealType={meal.meal_type as MealType}
+            items={meal.food_items}
+          />
           <FavouriteButton mealId={meal.id} initial={meal.is_favourite} />
           <DeleteMealButton
             mealId={meal.id}

@@ -115,6 +115,66 @@ describe.skipIf(!configured)('row level security', () => {
     await userA.from('meals').delete().in('id', [originalId, copyId])
   })
 
+  test('update_meal corrects your own meal and refuses someone else\'s', async () => {
+    const userA = await signIn(env.aEmail!, env.aPassword!)
+    const userB = await signIn(env.bEmail!, env.bPassword!)
+
+    // Arrange: A logs a meal whose estimate is wrong.
+    const { data: mealId } = await userA.rpc('log_meal', {
+      p_meal_type: 'lunch',
+      p_image_key: null,
+      p_items: [{ name: 'Edit probe pasta', calories: 900, protein_g: 20 }],
+    })
+    expect(mealId).toBeTruthy()
+
+    const { data: before } = await userA
+      .from('meals')
+      .select('local_date, logged_at')
+      .eq('id', mealId)
+      .single()
+
+    // Act: B cannot edit it. RLS hides the row, so the function raises.
+    const { error: bError } = await userB.rpc('update_meal', {
+      p_meal_id: mealId,
+      p_meal_type: 'lunch',
+      p_items: [{ name: 'Hijacked', calories: 1 }],
+    })
+    expect(bError).not.toBeNull()
+
+    // Act: A corrects the portion and splits it into two items.
+    const { error: aError } = await userA.rpc('update_meal', {
+      p_meal_id: mealId,
+      p_meal_type: 'dinner',
+      p_items: [
+        { name: 'Pasta', calories: 400, protein_g: 12 },
+        { name: 'Pesto', calories: 150, protein_g: 3 },
+      ],
+    })
+    expect(aError).toBeNull()
+
+    // Assert: totals are re-derived from the items, never taken from the client.
+    const { data: after } = await userA
+      .from('meals')
+      .select('calories, protein_g, meal_type, local_date, logged_at, food_items(name)')
+      .eq('id', mealId)
+      .single()
+
+    expect(after).toMatchObject({ calories: 550, meal_type: 'dinner' })
+    expect(Number(after!.protein_g)).toBe(15)
+    expect(after!.food_items).toHaveLength(2)
+
+    // The correction must not move the meal to today.
+    expect(after!.local_date).toBe(before!.local_date)
+    expect(after!.logged_at).toBe(before!.logged_at)
+
+    // And B's attempt left nothing behind.
+    expect(
+      (after!.food_items as { name: string }[]).some((i) => i.name === 'Hijacked'),
+    ).toBe(false)
+
+    await userA.from('meals').delete().eq('id', mealId)
+  })
+
   test('a client cannot forge a user_id on insert', async () => {
     const userA = await signIn(env.aEmail!, env.aPassword!)
     const userB = await signIn(env.bEmail!, env.bPassword!)
