@@ -1,3 +1,407 @@
-[
-  { "image": "hamburger.jpg", "kcal": 550, "expect": ["burger"], "source": "PLACEHOLDER label - replace with a photo whose calories you actually know" }
-]
+{
+  "source": "Nutrition5k (Google Research), CC BY 4.0",
+  "url": "https://github.com/google-research-datasets/Nutrition5k",
+  "note": "Calories are measured by weighing every ingredient, not estimated. Images are cached by scripts/fetch-fixtures.mjs and are not committed.",
+  "cases": [
+    {
+      "image": "images/dish_1563207277.jpg",
+      "kcal": 153,
+      "grams": 106,
+      "expect": [
+        "yam",
+        "sweet potato"
+      ],
+      "dish_id": "dish_1563207277"
+    },
+    {
+      "image": "images/dish_1561753623.jpg",
+      "kcal": 159,
+      "grams": 149,
+      "expect": [
+        "olive oil",
+        "thyme"
+      ],
+      "dish_id": "dish_1561753623"
+    },
+    {
+      "image": "images/dish_1562774180.jpg",
+      "kcal": 164,
+      "grams": 181,
+      "expect": [
+        "cantaloupe",
+        "raspberries"
+      ],
+      "dish_id": "dish_1562774180"
+    },
+    {
+      "image": "images/dish_1562603598.jpg",
+      "kcal": 175,
+      "grams": 156,
+      "expect": [
+        "berries",
+        "bacon"
+      ],
+      "dish_id": "dish_1562603598"
+    },
+    {
+      "image": "images/dish_1561576257.jpg",
+      "kcal": 181,
+      "grams": 134,
+      "expect": [
+        "olives",
+        "roasted potatoes"
+      ],
+      "dish_id": "dish_1561576257"
+    },
+    {
+      "image": "images/dish_1559233756.jpg",
+      "kcal": 190,
+      "grams": 222,
+      "expect": [
+        "strawberries",
+        "bacon"
+      ],
+      "dish_id": "dish_1559233756"
+    },
+    {
+      "image": "images/dish_1560961261.jpg",
+      "kcal": 193,
+      "grams": 218,
+      "expect": [
+        "broccoli",
+        "strawberries"
+      ],
+      "dish_id": "dish_1560961261"
+    },
+    {
+      "image": "images/dish_1563900150.jpg",
+      "kcal": 202,
+      "grams": 154,
+      "expect": [
+        "sweet potato",
+        "olive oil"
+      ],
+      "dish_id": "dish_1563900150"
+    },
+    {
+      "image": "images/dish_1561739649.jpg",
+      "kcal": 208,
+      "grams": 388,
+      "expect": [
+        "sweet potato",
+        "broccoli"
+      ],
+      "dish_id": "dish_1561739649"
+    },
+    {
+      "image": "images/dish_1566414642.jpg",
+      "kcal": 220,
+      "grams": 145,
+      "expect": [
+        "roasted potatoes",
+        "chicken"
+      ],
+      "dish_id": "dish_1566414642"
+    },
+    {
+      "image": "images/dish_1558028194.jpg",
+      "kcal": 228,
+      "grams": 172,
+      "expect": [
+        "bacon",
+        "deprecated"
+      ],
+      "dish_id": "dish_1558028194"
+    },
+    {
+      "image": "images/dish_1562777068.jpg",
+      "kcal": 237,
+      "grams": 236,
+      "expect": [
+        "olive oil",
+        "brussels sprouts"
+      ],
+      "dish_id": "dish_1562777068"
+    },
+    {
+      "image": "images/dish_1563566725.jpg",
+      "kcal": 241,
+      "grams": 206,
+      "expect": [
+        "olive oil",
+        "olives"
+      ],
+      "dish_id": "dish_1563566725"
+    },
+    {
+      "image": "images/dish_1566849269.jpg",
+      "kcal": 250,
+      "grams": 153,
+      "expect": [
+        "avocado",
+        "parmesan cheese"
+      ],
+      "dish_id": "dish_1566849269"
+    },
+    {
+      "image": "images/dish_1563555543.jpg",
+      "kcal": 268,
+      "grams": 280,
+      "expect": [
+        "scrambled eggs",
+        "pineapple"
+      ],
+      "dish_id": "dish_1563555543"
+    },
+    {
+      "image": "images/dish_1562775047.jpg",
+      "kcal": 285,
+      "grams": 461,
+      "expect": [
+        "berries",
+        "oatmeal"
+      ],
+      "dish_id": "dish_1562775047"
+    },
+    {
+      "image": "images/dish_1568061234.jpg",
+      "kcal": 291,
+      "grams": 358,
+      "expect": [
+        "salt",
+        "cheese pizza"
+      ],
+      "dish_id": "dish_1568061234"
+    },
+    {
+      "image": "images/dish_1563811515.jpg",
+      "kcal": 298,
+      "grams": 491,
+      "expect": [
+        "olive oil",
+        "egg whites"
+      ],
+      "dish_id": "dish_1563811515"
+    },
+    {
+      "image": "images/dish_1566419546.jpg",
+      "kcal": 306,
+      "grams": 177,
+      "expect": [
+        "caesar salad",
+        "cheese pizza"
+      ],
+      "dish_id": "dish_1566419546"
+    },
+    {
+      "image": "images/dish_1564589366.jpg",
+      "kcal": 324,
+      "grams": 348,
+      "expect": [
+        "egg whites",
+        "roasted potatoes"
+      ],
+      "dish_id": "dish_1564589366"
+    },
+    {
+      "image": "images/dish_1564588919.jpg",
+      "kcal": 336,
+      "grams": 452,
+      "expect": [
+        "milk",
+        "greek yogurt"
+      ],
+      "dish_id": "dish_1564588919"
+    },
+    {
+      "image": "images/dish_1564170880.jpg",
+      "kcal": 349,
+      "grams": 230,
+      "expect": [
+        "salmon",
+        "pepper"
+      ],
+      "dish_id": "dish_1564170880"
+    },
+    {
+      "image": "images/dish_1564427455.jpg",
+      "kcal": 354,
+      "grams": 218,
+      "expect": [
+        "grilled chicken",
+        "olives"
+      ],
+      "dish_id": "dish_1564427455"
+    },
+    {
+      "image": "images/dish_1565024741.jpg",
+      "kcal": 360,
+      "grams": 192,
+      "expect": [
+        "turkey bacon",
+        "scrambled eggs"
+      ],
+      "dish_id": "dish_1565024741"
+    },
+    {
+      "image": "images/dish_1558380181.jpg",
+      "kcal": 375,
+      "grams": 313,
+      "expect": [
+        "almonds",
+        "deprecated"
+      ],
+      "dish_id": "dish_1558380181"
+    },
+    {
+      "image": "images/dish_1565021714.jpg",
+      "kcal": 381,
+      "grams": 662,
+      "expect": [
+        "olive oil",
+        "egg whites"
+      ],
+      "dish_id": "dish_1565021714"
+    },
+    {
+      "image": "images/dish_1565987116.jpg",
+      "kcal": 393,
+      "grams": 397,
+      "expect": [
+        "chicken",
+        "olives"
+      ],
+      "dish_id": "dish_1565987116"
+    },
+    {
+      "image": "images/dish_1563295400.jpg",
+      "kcal": 403,
+      "grams": 269,
+      "expect": [
+        "broccoli",
+        "yam"
+      ],
+      "dish_id": "dish_1563295400"
+    },
+    {
+      "image": "images/dish_1566501473.jpg",
+      "kcal": 414,
+      "grams": 371,
+      "expect": [
+        "olives",
+        "carrot"
+      ],
+      "dish_id": "dish_1566501473"
+    },
+    {
+      "image": "images/dish_1565107119.jpg",
+      "kcal": 426,
+      "grams": 562,
+      "expect": [
+        "sweet potato",
+        "scrambled eggs"
+      ],
+      "dish_id": "dish_1565107119"
+    },
+    {
+      "image": "images/dish_1562947503.jpg",
+      "kcal": 438,
+      "grams": 408,
+      "expect": [
+        "sausage",
+        "roasted potatoes"
+      ],
+      "dish_id": "dish_1562947503"
+    },
+    {
+      "image": "images/dish_1568401199.jpg",
+      "kcal": 460,
+      "grams": 343,
+      "expect": [
+        "tuna salad",
+        "squash"
+      ],
+      "dish_id": "dish_1568401199"
+    },
+    {
+      "image": "images/dish_1565383097.jpg",
+      "kcal": 479,
+      "grams": 430,
+      "expect": [
+        "spinach (raw)",
+        "cucumbers"
+      ],
+      "dish_id": "dish_1565383097"
+    },
+    {
+      "image": "images/dish_1566931620.jpg",
+      "kcal": 495,
+      "grams": 461,
+      "expect": [
+        "avocado",
+        "olives"
+      ],
+      "dish_id": "dish_1566931620"
+    },
+    {
+      "image": "images/dish_1559849497.jpg",
+      "kcal": 521,
+      "grams": 340,
+      "expect": [
+        "almonds",
+        "pears"
+      ],
+      "dish_id": "dish_1559849497"
+    },
+    {
+      "image": "images/dish_1565725188.jpg",
+      "kcal": 543,
+      "grams": 521,
+      "expect": [
+        "carrot",
+        "bell peppers"
+      ],
+      "dish_id": "dish_1565725188"
+    },
+    {
+      "image": "images/dish_1562946075.jpg",
+      "kcal": 558,
+      "grams": 297,
+      "expect": [
+        "sausage",
+        "scrambled eggs"
+      ],
+      "dish_id": "dish_1562946075"
+    },
+    {
+      "image": "images/dish_1558115641.jpg",
+      "kcal": 585,
+      "grams": 331,
+      "expect": [
+        "grapes",
+        "sausage"
+      ],
+      "dish_id": "dish_1558115641"
+    },
+    {
+      "image": "images/dish_1563389786.jpg",
+      "kcal": 640,
+      "grams": 564,
+      "expect": [
+        "cherry tomatoes",
+        "carrot"
+      ],
+      "dish_id": "dish_1563389786"
+    },
+    {
+      "image": "images/dish_1568666357.jpg",
+      "kcal": 752,
+      "grams": 603,
+      "expect": [
+        "chicken",
+        "artichokes"
+      ],
+      "dish_id": "dish_1568666357"
+    }
+  ]
+}

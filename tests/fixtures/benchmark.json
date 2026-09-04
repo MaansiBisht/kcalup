@@ -1,0 +1,39 @@
+{
+  "measured": "2026-09-04",
+  "plates": 40,
+  "source": "Nutrition5k (Google Research), CC BY 4.0",
+  "url": "https://github.com/google-research-datasets/Nutrition5k",
+  "concurrency": 2,
+  "results": [
+    {
+      "model": "gemini-3.1-flash-lite",
+      "n": 40,
+      "schema fail": 0,
+      "throttled": 0,
+      "errored": 0,
+      "median err %": 25,
+      "p90 err %": 70,
+      "worst err %": 95,
+      "bias %": -17,
+      "within 25%": 50,
+      "within 50%": 80,
+      "median s": 6.5,
+      "usable": "yes"
+    },
+    {
+      "model": "gemini-3.5-flash",
+      "n": 0,
+      "schema fail": 0,
+      "throttled": 40,
+      "errored": 0,
+      "median err %": null,
+      "p90 err %": null,
+      "worst err %": null,
+      "bias %": null,
+      "within 25%": null,
+      "within 50%": null,
+      "median s": null,
+      "usable": "NO — starved"
+    }
+  ]
+}
