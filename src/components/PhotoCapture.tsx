@@ -8,7 +8,7 @@ import { MEAL_IMAGES_BUCKET, mealImageKey } from '@/lib/storage'
 import { analysisSchema, MAX_NOTE_LENGTH, type FoodItem } from '@/lib/analysis'
 import { mealTypeFromHour, type MealType } from '@/lib/nutrition'
 import { hourIn } from '@/lib/date'
-import { ReviewSheet } from './ReviewSheet'
+import { ReviewSheet, BLANK_ITEM } from './ReviewSheet'
 import { CAMERA_INPUT_ID } from './camera-input-id'
 
 type Stage = 'idle' | 'describe' | 'uploading' | 'analyzing' | 'review'
@@ -112,6 +112,20 @@ export function PhotoCapture({ timezone }: { timezone: string }) {
     [timezone, note],
   )
 
+  /**
+   * Straight to the sheet with one empty row. No upload, no AI call -- this is
+   * the path for a meal that was forgotten, drunk, or eaten before anyone
+   * thought to photograph it. The sheet was always a full editor; until now
+   * nothing could reach it without a photo first.
+   */
+  function startManual() {
+    setError(null)
+    setItems([{ ...BLANK_ITEM }])
+    setImageKey(null)
+    setMealType(mealTypeFromHour(hourIn(timezone)))
+    setStage('review')
+  }
+
   function reset() {
     setStage('idle')
     setItems([])
@@ -179,6 +193,15 @@ export function PhotoCapture({ timezone }: { timezone: string }) {
             className="w-full rounded-card border border-hairline bg-paper px-5 py-3.5 text-[0.9375rem] font-medium text-ink transition-colors hover:bg-cream disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
           >
             Upload from gallery
+          </button>
+
+          <button
+            type="button"
+            onClick={startManual}
+            disabled={busy}
+            className="w-full py-2 text-sm font-medium text-muted transition-colors hover:text-ink disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+          >
+            Add without a photo
           </button>
         </>
       )}
@@ -250,6 +273,7 @@ export function PhotoCapture({ timezone }: { timezone: string }) {
         <ReviewSheet
           initialItems={items}
           imageKey={imageKey}
+          manual={imageKey === null}
           mealType={mealType}
           onMealType={setMealType}
           onCancel={reset}

@@ -5,7 +5,8 @@ import { supabaseBrowser } from '@/lib/supabase-browser'
 import type { FoodItem } from '@/lib/analysis'
 import { sumItems, MEAL_TYPES, type MealType } from '@/lib/nutrition'
 
-const BLANK: FoodItem = {
+/** A blank row. The manual path opens the sheet with exactly one of these. */
+export const BLANK_ITEM: FoodItem = {
   name: '',
   quantity: null,
   unit: null,
@@ -23,6 +24,7 @@ export function ReviewSheet({
   onMealType,
   onCancel,
   onSaved,
+  manual = false,
 }: {
   initialItems: FoodItem[]
   imageKey: string | null
@@ -30,6 +32,8 @@ export function ReviewSheet({
   onMealType: (t: MealType) => void
   onCancel: () => void
   onSaved: () => void
+  /** Typed from memory rather than read off a photo. Only the wording differs. */
+  manual?: boolean
 }) {
   const [items, setItems] = useState<FoodItem[]>(initialItems)
   const [saving, setSaving] = useState(false)
@@ -69,12 +73,14 @@ export function ReviewSheet({
   return (
     <section
       role="dialog"
-      aria-label="Review this meal"
+      aria-label={manual ? 'Add a meal by hand' : 'Review this meal'}
       className="fixed inset-0 z-20 flex items-end justify-center bg-ink/40 backdrop-blur-[2px]"
     >
       <div className="flex max-h-[92dvh] w-full max-w-md flex-col rounded-t-[1.75rem] bg-paper">
         <header className="flex items-center justify-between border-b border-hairline px-5 py-4">
-          <h2 className="text-base font-bold tracking-tight text-ink">Review this meal</h2>
+          <h2 className="text-base font-bold tracking-tight text-ink">
+            {manual ? 'Add a meal by hand' : 'Review this meal'}
+          </h2>
           <button
             type="button"
             onClick={onCancel}
@@ -85,9 +91,12 @@ export function ReviewSheet({
         </header>
 
         <div className="flex-1 overflow-y-auto px-5 py-4">
-          {/* Say plainly that this is an estimate. The user is the check on it. */}
+          {/* Say plainly where the numbers came from. On the manual path they
+              are the user's own, so the estimate disclaimer would be a lie. */}
           <p className="mb-4 rounded-tile bg-cream px-3.5 py-2.5 text-xs leading-relaxed text-muted">
-            These are AI estimates from your photo — tap any number to correct it before saving.
+            {manual
+              ? 'Name each food and enter what you know. Calories are enough — macros are optional.'
+              : 'These are AI estimates from your photo — tap any number to correct it before saving.'}
           </p>
 
           <fieldset className="mb-5">
@@ -178,7 +187,7 @@ export function ReviewSheet({
 
           <button
             type="button"
-            onClick={() => setItems((prev) => [...prev, { ...BLANK }])}
+            onClick={() => setItems((prev) => [...prev, { ...BLANK_ITEM }])}
             className="mt-3 w-full rounded-tile border border-dashed border-hairline py-2.5 text-sm font-medium text-muted transition-colors hover:border-muted hover:text-ink"
           >
             + Add an item
