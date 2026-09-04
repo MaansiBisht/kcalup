@@ -6,17 +6,24 @@ import { PhotoCapture } from '@/components/PhotoCapture'
 import { MealList } from '@/components/MealList'
 import { RepeatMeals } from '@/components/RepeatMeals'
 import { MacroTiles } from '@/components/MacroTiles'
+import { StreakBanner } from '@/components/StreakBanner'
 import { TabBar } from '@/components/TabBar'
 import { requireProfile, todayFor, loadDay, loadSuggestions } from '@/lib/day'
-import { greeting, formatFullDate } from '@/lib/date'
+import { streaksFrom, loadLoggedDates } from '@/lib/streak'
+import { greeting, formatFullDate, hourIn } from '@/lib/date'
 import { sumItems } from '@/lib/nutrition'
 
 export default async function TodayPage() {
   const profile = await requireProfile()
   const today = todayFor(profile)
   // Independent reads, so they go together rather than one after the other.
-  const [meals, suggestions] = await Promise.all([loadDay(today), loadSuggestions()])
+  const [meals, suggestions, loggedDates] = await Promise.all([
+    loadDay(today),
+    loadSuggestions(),
+    loadLoggedDates(today),
+  ])
   const totals = sumItems(meals)
+  const streak = streaksFrom(loggedDates, today)
 
   return (
     <>
@@ -29,6 +36,8 @@ export default async function TodayPage() {
         </div>
 
         <CalorieCard consumed={totals.calories} goal={profile.daily_calorie_goal} />
+
+        <StreakBanner streak={streak} hour={hourIn(profile.timezone)} />
 
         {/* useSearchParams needs a Suspense boundary during prerender. */}
         <Suspense fallback={<div className="h-[7.5rem]" />}>
