@@ -10,6 +10,9 @@ const SIGNED_URL_TTL_SECONDS = 3600
 /** Rendered at 40px, doubled for retina. */
 const THUMB_PX = 80
 
+/** Enough to cover a week of habits without turning the strip into a menu. */
+const SUGGESTION_LIMIT = 12
+
 export type Profile = {
   id: string
   name: string | null
@@ -35,6 +38,19 @@ export type DayMeal = {
   food_items: { name: string }[]
 }
 
+/** One previously logged meal, offered for re-logging. Shape of meal_suggestions. */
+export type SuggestionRow = {
+  meal_id: string
+  label: string | null
+  calories: number
+  image_key: string | null
+  is_favourite: boolean
+  times_logged: number
+  last_logged: string
+}
+
+export type Suggestion = SuggestionRow & { photoUrl: string | null }
+
 /** Every signed-in page needs the profile; an unsigned visitor needs the door. */
 export async function requireProfile(): Promise<Profile> {
   const supabase = await supabaseServer()
@@ -58,6 +74,32 @@ export function todayFor(profile: Profile): string {
   return localDate(profile.timezone)
 }
 
+type Supabase = Awaited<ReturnType<typeof supabaseServer>>
+
+/**
+ * Signed in parallel rather than batched: only the single-path call takes a
+ * transform, and an 80px thumbnail beats shipping the 1280px original. A key
+ * whose object is gone just signs to a URL that 404s, which renders as no photo.
+ */
+async function withThumbnails<T extends { image_key: string | null }>(
+  supabase: Supabase,
+  rows: T[],
+): Promise<(T & { photoUrl: string | null })[]> {
+  return Promise.all(
+    rows.map(async (row) => {
+      if (!row.image_key) return { ...row, photoUrl: null }
+
+      const { data: signed } = await supabase.storage
+        .from(MEAL_IMAGES_BUCKET)
+        .createSignedUrl(row.image_key, SIGNED_URL_TTL_SECONDS, {
+          transform: { width: THUMB_PX, height: THUMB_PX, resize: 'cover' },
+        })
+
+      return { ...row, photoUrl: signed?.signedUrl ?? null }
+    }),
+  )
+}
+
 export async function loadDay(date: string): Promise<DayMeal[]> {
   const supabase = await supabaseServer()
   const { data } = await supabase
@@ -68,23 +110,18 @@ export async function loadDay(date: string): Promise<DayMeal[]> {
     .eq('local_date', date)
     .order('logged_at', { ascending: true })
 
-  const meals = (data ?? []) as DayMeal[]
+  return withThumbnails(supabase, (data ?? []) as DayMeal[])
+}
 
-  // Signed in parallel rather than batched: only the single-path call takes a
-  // transform, and an 80px thumbnail beats shipping the 1280px original.
-  return Promise.all(
-    meals.map(async (meal) => {
-      if (!meal.image_key) return { ...meal, photoUrl: null }
+/**
+ * The meals worth offering as one-tap repeats. Ranking, de-duplication and the
+ * eaten count all happen in meal_suggestions; this only signs the thumbnails.
+ */
+export async function loadSuggestions(): Promise<Suggestion[]> {
+  const supabase = await supabaseServer()
+  const { data } = await supabase.rpc('meal_suggestions', { p_limit: SUGGESTION_LIMIT })
 
-      const { data: signed } = await supabase.storage
-        .from(MEAL_IMAGES_BUCKET)
-        .createSignedUrl(meal.image_key, SIGNED_URL_TTL_SECONDS, {
-          transform: { width: THUMB_PX, height: THUMB_PX, resize: 'cover' },
-        })
-
-      return { ...meal, photoUrl: signed?.signedUrl ?? null }
-    }),
-  )
+  return withThumbnails(supabase, (data ?? []) as SuggestionRow[])
 }
 
 /**
