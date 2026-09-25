@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabaseBrowser } from '@/lib/supabase-browser'
+import { deviceTimezone } from '@/lib/date'
 import { MacroInput, optionalInt } from '@/components/Field'
 
 const GOAL_TYPES = [
@@ -40,7 +41,7 @@ export default function OnboardingPage() {
 
     // Capture the device timezone once. Every local_date the server computes
     // from here on depends on this being right.
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+    const timezone = deviceTimezone()
 
     const { error: updateError } = await supabase
       .from('profiles')

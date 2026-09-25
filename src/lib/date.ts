@@ -46,3 +46,41 @@ export function hourIn(timezone: string, at: Date = new Date()): number {
     new Intl.DateTimeFormat('en-US', { timeZone: timezone, hour: 'numeric', hourCycle: 'h23' }).format(at),
   )
 }
+
+export const FALLBACK_TIMEZONE = 'UTC'
+
+export function isValidTimezone(tz: unknown): tz is string {
+  if (typeof tz !== 'string') return false
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: tz })
+    return true
+  } catch {
+    return false
+  }
+}
+
+export function resolveTimezone(tz: string | null | undefined): string {
+  return isValidTimezone(tz) ? tz : FALLBACK_TIMEZONE
+}
+
+export function deviceTimezone(): string {
+  return resolveTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone)
+}
+
+/** "1:26 PM" — a stored UTC instant rendered in the user's own timezone. */
+export function formatTime(iso: string | Date, timezone: string): string {
+  return new Date(iso).toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: timezone,
+  })
+}
+
+export function supportedTimezones(): string[] {
+  try {
+    const zones = Intl.supportedValuesOf('timeZone')
+    return zones.includes(FALLBACK_TIMEZONE) ? zones : [...zones, FALLBACK_TIMEZONE]
+  } catch {
+    return [FALLBACK_TIMEZONE]
+  }
+}

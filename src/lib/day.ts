@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { supabaseServer } from './supabase-server'
-import { localDate } from './date'
+import { localDate, resolveTimezone } from './date'
 import { MEAL_IMAGES_BUCKET } from './storage'
 import type { MealType } from './nutrition'
 
@@ -66,7 +66,7 @@ export async function requireProfile(): Promise<Profile> {
   // The signup trigger creates the row; if it is somehow missing, onboarding
   // is a better destination than a crash.
   if (!profile) redirect('/onboarding')
-  return profile as Profile
+  return { ...profile, timezone: resolveTimezone(profile.timezone) } as Profile
 }
 
 /** Today in the user's own timezone, not the server's. */

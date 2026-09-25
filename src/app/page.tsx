@@ -8,6 +8,7 @@ import { RepeatMeals } from '@/components/RepeatMeals'
 import { MacroTiles } from '@/components/MacroTiles'
 import { StreakBanner } from '@/components/StreakBanner'
 import { TabBar } from '@/components/TabBar'
+import { TimezoneSync } from '@/components/TimezoneSync'
 import { requireProfile, todayFor, loadDay, loadSuggestions } from '@/lib/day'
 import { streaksFrom, loadLoggedDates } from '@/lib/streak'
 import { greeting, formatFullDate, hourIn } from '@/lib/date'
@@ -28,6 +29,7 @@ export default async function TodayPage() {
   return (
     <>
       <AppHeader name={profile.name} />
+      <TimezoneSync userId={profile.id} timezone={profile.timezone} />
 
       <main className="flex-1 space-y-6 px-5 pt-2 pb-8">
         <div>

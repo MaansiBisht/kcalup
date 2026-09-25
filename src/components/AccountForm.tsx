@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabaseBrowser } from '@/lib/supabase-browser'
+import { deviceTimezone, supportedTimezones } from '@/lib/date'
 import { MEAL_IMAGES_BUCKET } from '@/lib/storage'
 import type { Profile } from '@/lib/day'
 import { Field, MacroInput, optionalInt } from './Field'
@@ -12,6 +13,7 @@ const GOAL_TYPES = ['lose', 'maintain', 'gain'] as const
 export function AccountForm({ profile }: { profile: Profile }) {
   const router = useRouter()
   const [name, setName] = useState(profile.name ?? '')
+  const [timezone, setTimezone] = useState(profile.timezone)
   const [goal, setGoal] = useState(String(profile.daily_calorie_goal))
   const [goalType, setGoalType] = useState<string>(profile.goal_type)
   const [protein, setProtein] = useState(profile.protein_goal_g?.toString() ?? '')
@@ -21,6 +23,17 @@ export function AccountForm({ profile }: { profile: Profile }) {
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // Read on the client only — null on the server, so hydration matches.
+  const device = useSyncExternalStore(
+    () => () => {},
+    () => deviceTimezone(),
+    () => null,
+  )
+
+  const timezones = useMemo(() => {
+    const zones = supportedTimezones()
+    return zones.includes(timezone) ? zones : [timezone, ...zones]
+  }, [timezone])
 
   async function save(event: React.FormEvent) {
     event.preventDefault()
@@ -48,9 +61,7 @@ export function AccountForm({ profile }: { profile: Profile }) {
         daily_calorie_goal: Math.round(calories),
         goal_type: goalType,
         target_weight_kg: target,
-        // Refresh the timezone on save — people move, and every future
-        // local_date depends on this being current.
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || profile.timezone,
+        timezone,
         protein_goal_g: optionalInt(protein),
         carbs_goal_g: optionalInt(carbs),
         fat_goal_g: optionalInt(fat),
@@ -75,6 +86,33 @@ export function AccountForm({ profile }: { profile: Profile }) {
     <div className="space-y-8">
       <form onSubmit={save} className="space-y-4">
         <Field label="Name" value={name} onChange={setName} type="text" />
+
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-medium text-muted">Timezone</span>
+          <select
+            value={timezone}
+            onChange={(e) => setTimezone(e.target.value)}
+            className="w-full rounded-tile border border-hairline bg-paper px-4 py-3 text-[0.9375rem] text-ink tabular-nums focus:border-forest focus:outline-none"
+          >
+            {timezones.map((tz) => (
+              <option key={tz} value={tz}>
+                {tz}
+              </option>
+            ))}
+          </select>
+          <span className="mt-1 block text-[0.6875rem] text-muted">
+            Used for the daily rollover, greetings and meal times.
+          </span>
+          {device !== null && timezone !== device && (
+            <button
+              type="button"
+              onClick={() => setTimezone(device)}
+              className="mt-1 text-xs text-muted transition-colors hover:text-ink"
+            >
+              Use device time zone ({device})
+            </button>
+          )}
+        </label>
 
         <label className="block">
           <span className="mb-1.5 block text-xs font-medium text-muted">Daily calorie goal</span>
@@ -163,8 +201,6 @@ export function AccountForm({ profile }: { profile: Profile }) {
       </form>
 
       <div className="space-y-3 border-t border-hairline pt-6">
-        <p className="text-xs text-muted">Timezone: {profile.timezone}</p>
-
         <button
           type="button"
           onClick={signOut}

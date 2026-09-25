@@ -7,7 +7,7 @@ import { FavouriteButton } from '@/components/FavouriteButton'
 import { EditMealButton } from '@/components/EditMealButton'
 import { requireProfile, todayFor } from '@/lib/day'
 import { supabaseServer } from '@/lib/supabase-server'
-import { formatDayLabel } from '@/lib/date'
+import { formatDayLabel, formatTime } from '@/lib/date'
 import { MEAL_IMAGES_BUCKET } from '@/lib/storage'
 import type { MealType } from '@/lib/nutrition'
 
@@ -69,11 +69,7 @@ export default async function MealPage({ params }: { params: Promise<{ id: strin
       ).data?.signedUrl
     : null
 
-  const loggedTime = new Date(meal.logged_at).toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    timeZone: profile.timezone,
-  })
+  const loggedTime = formatTime(meal.logged_at, profile.timezone)
 
   return (
     <>
