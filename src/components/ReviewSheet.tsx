@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { supabaseBrowser } from '@/lib/supabase-browser'
 import type { FoodItem } from '@/lib/analysis'
-import { sumItems, MEAL_TYPES, type MealType } from '@/lib/nutrition'
+import { sumItems, scaleFoodItem, MEAL_TYPES, type MealType } from '@/lib/nutrition'
 
 /** A blank row. The manual path opens the sheet with exactly one of these. */
 export const BLANK_ITEM: FoodItem = {
@@ -77,6 +77,10 @@ export function ReviewSheet({
   // Immutable updates throughout — replace the row, never mutate it.
   function updateItem(index: number, patch: Partial<FoodItem>) {
     setItems((prev) => prev.map((item, i) => (i === index ? { ...item, ...patch } : item)))
+  }
+
+  function scaleItem(index: number, factor: number) {
+    setItems((prev) => prev.map((item, i) => (i === index ? scaleFoodItem(item, factor) : item)))
   }
 
   function removeItem(index: number) {
@@ -193,6 +197,28 @@ export function ReviewSheet({
                       className="w-full rounded-lg bg-cream px-2.5 py-1.5 text-sm text-ink placeholder:text-muted focus:outline-2 focus:outline-forest"
                     />
                   </label>
+                </div>
+
+                <div className="mt-2">
+                  <span className="mb-1 block text-[0.6875rem] font-medium text-muted">Portion</span>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      ['½', 0.5, 'to half'],
+                      ['−25%', 0.75, 'down 25 percent'],
+                      ['+25%', 1.25, 'up 25 percent'],
+                      ['×2', 2, 'to double'],
+                    ].map(([label, factor, action]) => (
+                      <button
+                        key={label}
+                        type="button"
+                        onClick={() => scaleItem(index, factor as number)}
+                        aria-label={`Scale ${item.name || `item ${index + 1}`} ${action}`}
+                        className="min-h-9 rounded-lg bg-cream px-2 text-xs font-medium text-muted transition-colors hover:text-ink"
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="mt-2 grid grid-cols-4 gap-2">

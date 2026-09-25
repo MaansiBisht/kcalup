@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest'
-import { mealTypeFromHour, sumItems, goalProgress } from '@/lib/nutrition'
+import { mealTypeFromHour, sumItems, goalProgress, scaleFoodItem } from '@/lib/nutrition'
 
 describe('mealTypeFromHour', () => {
   test('maps the day onto four meal slots', () => {
@@ -12,6 +12,54 @@ describe('mealTypeFromHour', () => {
     expect(mealTypeFromHour(11)).toBe('lunch')
     expect(mealTypeFromHour(16)).toBe('dinner')
     expect(mealTypeFromHour(0)).toBe('breakfast')
+  })
+})
+
+describe('scaleFoodItem', () => {
+  const item = {
+    name: 'Greek yogurt',
+    quantity: 1.5,
+    unit: 'cup',
+    calories: 101,
+    protein_g: 12.3,
+    carbs_g: 9.9,
+    fat_g: 3.5,
+    confidence: 0.88,
+  }
+
+  test('scales quantity, calories, and macros together while preserving metadata', () => {
+    expect(scaleFoodItem(item, 0.5)).toEqual({
+      ...item,
+      quantity: 0.8,
+      calories: 51,
+      protein_g: 6.2,
+      carbs_g: 5,
+      fat_g: 1.8,
+    })
+  })
+
+  test('rounds calories to an integer and decimal fields to one decimal', () => {
+    expect(scaleFoodItem(item, 1.25)).toMatchObject({
+      quantity: 1.9,
+      calories: 126,
+      protein_g: 15.4,
+      carbs_g: 12.4,
+      fat_g: 4.4,
+    })
+  })
+
+  test('preserves null quantity and macros', () => {
+    const withNulls = { ...item, quantity: null, protein_g: null, carbs_g: null, fat_g: null }
+    expect(scaleFoodItem(withNulls, 2)).toMatchObject({
+      quantity: null,
+      protein_g: null,
+      carbs_g: null,
+      fat_g: null,
+    })
+  })
+
+  test.each([0, -1, Number.NaN])('returns the same item for invalid factor %s', (factor) => {
+    expect(scaleFoodItem(item, factor)).toBe(item)
   })
 })
 

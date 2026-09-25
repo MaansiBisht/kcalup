@@ -13,6 +13,22 @@ export function mealTypeFromHour(hour: number): MealType {
 
 export type Totals = { calories: number; protein_g: number; carbs_g: number; fat_g: number }
 
+export function scaleFoodItem(item: FoodItem, factor: number): FoodItem {
+  if (!Number.isFinite(factor) || factor <= 0) return item
+
+  const scaleDecimal = (value: number | null) =>
+    value === null ? null : Math.max(0, Math.round(value * factor * 10) / 10)
+
+  return {
+    ...item,
+    quantity: scaleDecimal(item.quantity),
+    calories: Math.max(0, Math.round(item.calories * factor)),
+    protein_g: scaleDecimal(item.protein_g),
+    carbs_g: scaleDecimal(item.carbs_g),
+    fat_g: scaleDecimal(item.fat_g),
+  }
+}
+
 export function sumItems(items: Pick<FoodItem, 'calories' | 'protein_g' | 'carbs_g' | 'fat_g'>[]): Totals {
   return items.reduce<Totals>(
     (acc, i) => ({
