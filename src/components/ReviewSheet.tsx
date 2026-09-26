@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { supabaseBrowser } from '@/lib/supabase-browser'
-import type { FoodItem } from '@/lib/analysis'
+import { MAX_NOTE_LENGTH, type FoodItem } from '@/lib/analysis'
 import { sumItems, scaleFoodItem, MEAL_TYPES, type MealType } from '@/lib/nutrition'
 
 /** A blank row. The manual path opens the sheet with exactly one of these. */
@@ -52,6 +52,9 @@ export function ReviewSheet({
   onSaved,
   manual = false,
   mealId = null,
+  note,
+  onNote,
+  onReanalyze,
 }: {
   initialItems: FoodItem[]
   imageKey: string | null
@@ -63,9 +66,13 @@ export function ReviewSheet({
   manual?: boolean
   /** Set when correcting a meal that is already saved. Updates instead of inserting. */
   mealId?: string | null
+  note?: string
+  onNote?: (note: string) => void
+  onReanalyze?: () => Promise<FoodItem[]>
 }) {
   const [items, setItems] = useState<FoodItem[]>(initialItems)
   const [saving, setSaving] = useState(false)
+  const [reanalyzing, setReanalyzing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const mode = mealId ? 'edit' : manual ? 'manual' : 'review'
@@ -73,6 +80,20 @@ export function ReviewSheet({
 
   const totals = sumItems(items)
   const canSave = items.length > 0 && items.every((i) => i.name.trim().length > 0)
+  const canReanalyze = mode === 'review' && typeof onReanalyze === 'function' && typeof onNote === 'function'
+
+  async function reanalyze() {
+    if (!onReanalyze) return
+    setReanalyzing(true)
+    setError(null)
+    try {
+      setItems(await onReanalyze())
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong.')
+    } finally {
+      setReanalyzing(false)
+    }
+  }
 
   // Immutable updates throughout — replace the row, never mutate it.
   function updateItem(index: number, patch: Partial<FoodItem>) {
@@ -139,6 +160,35 @@ export function ReviewSheet({
           <p className="mb-4 rounded-tile bg-cream px-3.5 py-2.5 text-xs leading-relaxed text-muted">
             {copy.hint}
           </p>
+
+          {canReanalyze && (
+            <div className="mb-5">
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-semibold tracking-wide text-muted uppercase">
+                  Improve the estimate (optional)
+                </span>
+                <input
+                  value={note ?? ''}
+                  onChange={(e) => onNote?.(e.target.value)}
+                  maxLength={MAX_NOTE_LENGTH}
+                  disabled={saving || reanalyzing}
+                  placeholder="e.g. two tablespoons of oil, half the rice"
+                  className="w-full rounded-tile border border-hairline bg-paper px-4 py-3 text-[0.9375rem] text-ink placeholder:text-muted focus:border-forest focus:outline-none disabled:opacity-60"
+                />
+                <span className="mt-1 block text-[0.6875rem] text-muted">
+                  Re-analysing uses the same photo — add what it could not see, then run it again.
+                </span>
+              </label>
+              <button
+                type="button"
+                onClick={reanalyze}
+                disabled={saving || reanalyzing}
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-card border border-hairline bg-paper px-5 py-3 text-[0.9375rem] font-medium text-ink transition-colors hover:bg-cream disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+              >
+                {reanalyzing ? 'Re-analysing…' : 'Re-analyse photo'}
+              </button>
+            </div>
+          )}
 
           <fieldset className="mb-5">
             <legend className="mb-2 text-xs font-semibold tracking-wide text-muted uppercase">
@@ -274,7 +324,7 @@ export function ReviewSheet({
           <button
             type="button"
             onClick={save}
-            disabled={saving || !canSave}
+            disabled={saving || reanalyzing || !canSave}
             className="w-full rounded-card bg-graphite py-3.5 text-[0.9375rem] font-semibold text-white transition-transform active:scale-[0.985] disabled:opacity-50"
           >
             {saving ? copy.saving : copy.save}

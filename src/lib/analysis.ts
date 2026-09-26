@@ -20,6 +20,12 @@ export const analysisSchema = z.object({
 export type FoodItem = z.infer<typeof foodItemSchema>
 export type Analysis = z.infer<typeof analysisSchema>
 
+export function parseAnalysisPayload(payload: unknown): FoodItem[] {
+  const parsed = analysisSchema.safeParse(payload)
+  if (!parsed.success) throw new Error('Got an unreadable response. Try again.')
+  return parsed.data.items
+}
+
 /** Structured output, not a tool call: json_schema is enforced, a tool is only suggested. */
 export const ANALYZE_RESPONSE_FORMAT = {
   type: 'json_schema' as const,

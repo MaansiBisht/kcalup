@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { supabaseBrowser } from '@/lib/supabase-browser'
 import { validateImage, downscaleImage, ACCEPTED_TYPES } from '@/lib/image'
 import { MEAL_IMAGES_BUCKET, mealImageKey } from '@/lib/storage'
-import { analysisSchema, MAX_NOTE_LENGTH, type FoodItem } from '@/lib/analysis'
+import { parseAnalysisPayload, MAX_NOTE_LENGTH, type FoodItem } from '@/lib/analysis'
 import { mealTypeFromHour, type MealType } from '@/lib/nutrition'
 import { hourIn } from '@/lib/date'
 import { ReviewSheet, BLANK_ITEM } from './ReviewSheet'
@@ -59,48 +59,58 @@ export function PhotoCapture({ timezone }: { timezone: string }) {
     setStage('describe')
   }
 
+  const requestAnalysis = useCallback(
+    async (key: string, analysisNote: string): Promise<FoodItem[]> => {
+      const trimmed = analysisNote.trim()
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          imageKey: key,
+          note: trimmed || undefined,
+        }),
+      })
+
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) {
+        throw new Error(payload?.error ?? 'Analysis failed. Try again.')
+      }
+
+      return parseAnalysisPayload(payload)
+    },
+    [],
+  )
+
   const analyze = useCallback(
     async (file: File) => {
       setError(null)
-      const supabase = supabaseBrowser()
-      const { data: auth } = await supabase.auth.getUser()
-      if (!auth.user) {
-        setError('Your session expired. Sign in again.')
-        return
-      }
-
-      setStage('uploading')
       try {
-        const blob = await downscaleImage(file)
-        const key = mealImageKey(auth.user.id)
+        let key = imageKey
+        if (!key) {
+          const supabase = supabaseBrowser()
+          const { data: auth } = await supabase.auth.getUser()
+          if (!auth.user) {
+            setError('Your session expired. Sign in again.')
+            return
+          }
 
-        const { error: uploadError } = await supabase.storage
-          .from(MEAL_IMAGES_BUCKET)
-          .upload(key, blob, { contentType: 'image/jpeg' })
+          setStage('uploading')
+          const blob = await downscaleImage(file)
+          key = mealImageKey(auth.user.id)
 
-        if (uploadError) throw new Error('Upload failed. Check your connection.')
+          const { error: uploadError } = await supabase.storage
+            .from(MEAL_IMAGES_BUCKET)
+            .upload(key, blob, { contentType: 'image/jpeg' })
 
-        setImageKey(key)
-        setStage('analyzing')
+          if (uploadError) throw new Error('Upload failed. Check your connection.')
 
-        const response = await fetch('/api/analyze', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            imageKey: key,
-            note: note.trim() || undefined,
-          }),
-        })
-
-        const payload = await response.json().catch(() => null)
-        if (!response.ok) {
-          throw new Error(payload?.error ?? 'Analysis failed. Try again.')
+          setImageKey(key)
         }
 
-        const parsed = analysisSchema.safeParse(payload)
-        if (!parsed.success) throw new Error('Got an unreadable response. Try again.')
+        setStage('analyzing')
+        const nextItems = await requestAnalysis(key, note)
 
-        setItems(parsed.data.items)
+        setItems(nextItems)
         setMealType(mealTypeFromHour(hourIn(timezone)))
         setStage('review')
       } catch (err) {
@@ -109,7 +119,7 @@ export function PhotoCapture({ timezone }: { timezone: string }) {
         setStage('describe')
       }
     },
-    [timezone, note],
+    [timezone, note, imageKey, requestAnalysis],
   )
 
   /**
@@ -276,6 +286,16 @@ export function PhotoCapture({ timezone }: { timezone: string }) {
           manual={imageKey === null}
           mealType={mealType}
           onMealType={setMealType}
+          note={note}
+          onNote={setNote}
+          onReanalyze={
+            imageKey
+              ? () => {
+                  const key = imageKey
+                  return requestAnalysis(key, note)
+                }
+              : undefined
+          }
           onCancel={reset}
           onSaved={() => {
             reset()

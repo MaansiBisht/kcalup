@@ -301,7 +301,7 @@ Installability comes from the manifest alone; there is no service worker, becaus
 - [ ] Custom SMTP so signup emails survive real traffic
 - [ ] Barcode scanning for packaged food
 - [ ] Weekly trends and averages
-- [ ] Re-analyse with a hint when the first pass gets it wrong
+- [x] Re-analyse with a hint when the first pass gets it wrong
 - [ ] Export to CSV
 
 ---

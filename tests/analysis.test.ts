@@ -3,6 +3,7 @@ import {
   analysisSchema,
   extractAnalysis,
   analyzePrompt,
+  parseAnalysisPayload,
   ANALYZE_PROMPT,
   MAX_NOTE_LENGTH,
 } from '@/lib/analysis'
@@ -35,6 +36,20 @@ describe('analysisSchema', () => {
 
   test('rejects a confidence outside 0..1', () => {
     expect(analysisSchema.safeParse({ items: [{ name: 'X', calories: 10, confidence: 1.5 }] }).success).toBe(false)
+  })
+})
+
+describe('parseAnalysisPayload', () => {
+  test('returns the items from a valid /api/analyze body', () => {
+    const items = parseAnalysisPayload(ok)
+    expect(items).toHaveLength(1)
+    expect(items[0]).toMatchObject({ name: 'Toast', calories: 120 })
+  })
+
+  test('throws the friendly error on a malformed body', () => {
+    expect(() => parseAnalysisPayload({ items: [] })).toThrow('Got an unreadable response')
+    expect(() => parseAnalysisPayload(null)).toThrow('Got an unreadable response')
+    expect(() => parseAnalysisPayload('nope')).toThrow('Got an unreadable response')
   })
 })
 
